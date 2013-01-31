@@ -1,0 +1,7 @@
+Try undistortion of the individual tracking points - undistorting the full image
+doesn't work well. This can be easily done with undistortPoints
+
+Do the back seeking properly
+
+Document creation of calib.xml
+

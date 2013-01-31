@@ -1,0 +1,102 @@
+--------- Dependencies ----------
+
+Opencv and Qt core for the .mat file output.
+
+
+--------- Compiling ----------
+
+For non-programmers on Debian/Ubuntu - make sure the build-essential package is
+installed, open a terminal, 'cd' to the directory you have the code in and type
+'make'. Your done. Run with ./runbot_tracking
+
+
+--------- Recording a Video ---------
+
+To record a video from the runbot camera use -
+
+mplayer -tv norm=PAL:input=1:width=512:height=384 tv:// -vo yuv4mpeg:interlaced
+
+This will create a raw YUV420p/YV12/whatever file (stream.yuv). Width and height
+are important since we do not want mplayer to do any scaling and mplayer
+currently uses fixed defaults which may not match the source. To avoid dropped
+frames (esp on a slower computer) do this on a tmpfs file system (mount will
+show where they are), typically /run/shm on Debian/Ubuntu.
+
+To convert the stream to individual ppm files, one for each video field, use -
+
+y4mscaler -S option=box -O chromass=444 <test_video.yuv | y4mtoppm | pamsplit - '%d.ppm' -padname=8
+
+y4mscaler will upscale the colour giving a YUV444 stream. Different filters can
+be tried, option=sinc:9 may work better although the only real problem with the
+box filter is aliasing which shouldn't affect the tracking. Any ringing/blurring
+on the other hand may screw things up.
+
+y4mtoppm converts to a stream of ppm images. To do one interlaced image per
+frame as opposed to one image per field, use -L. y4mtoppm is part of mjpegtools.
+
+pamsplit splits the ppm stream into individual images and is part of netpbm.
+Ubuntu/Debian repositories currently only have an old version of netpbm which
+does not include pamsplit, only pnmsplit which does not support zero padding of
+the filename. The tracker currently expects zero padded names for the image
+files - netpbm has been compiled from source on the machines used for the
+tracking.
+
+
+--------- Running the Tracker ----------
+
+The tracker takes one input argument - the location of the input video as
+individual ppm files (see above). If using the sample video decompress it with
+gunzip and convert it to ppm files as above. Other options/tuneables are located
+at the source file as #defines and const variables, just change and recompile ;)
+
+Output is written as a .mat file for easy loading in Matlab/Octave (output
+requires WRITE_MAT_FILE to be defined).
+
+If WRITE_IMAGES is defined the video output is written as individual ppm files
+to the working directory. These can be encoded into a video with the
+encode_video script (requires libav-tools and libx264).
+
+When running there are some simple video control keys:
+
+<space>  - pause
+n . >    - any of these keys to advance a frame while paused
+N , <    - any of these keys to go back a frame while paused
+ESC q    - quit
+
+
+--------- Making it work well ----------
+
+Use 4 red spots about 3 cm diameter on the robot:
+- 2 on the upper leg aligned so the mid-point between them is *always* the
+  centre of the leg
+- 1 on the knee joint (must be dead centre)
+- 1 on the centre of the lower leg.
+
+Things that will screw it up:
+
+- All or part of the tracking spot disappearing off screen or being covered in
+  any way at any point in the movement
+- Inconsistent lighting (you may have to retune for even small changes in the
+  lighting)
+- Too much shadow cast (esp by the motors) at any point in the movement. White
+  tape on the side of the motor may help with this.
+- Tracking spots raised too far off of the surface of the leg (ie on the motor).
+  The perspective distortion as the leg moves is too much - this is a big no-no
+  (hence the two spots on the upper leg - either side of the motor)
+- Poorly aligned tracking spots
+- Poorly aligned tracking spots
+- Did I say poorly aligned tracking spots?
+
+Things that help:
+
+- Felt spots - the non-reflective surface reduces white areas
+- A 5 mm white border around each spot makes for a cleaner edge
+- Well aligned spots
+- Well aligned... you get the idea.
+
+
+--------- Contact ----------
+
+Tracking - Graeme Hattan, graemeh.dev@googlemail.com
+Runbot   - Lin Meng, menglynn *at* hotmail *dot* com
+

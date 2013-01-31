@@ -1,0 +1,3 @@
+#!/bin/sh
+
+avconv -f image2 -i tracked_%08d.ppm -vcodec libx264 -pre placebo -crf 15 tracking.mkv
